@@ -11,10 +11,10 @@
 <style>
 html { -webkit-text-size-adjust: 100%; } body { margin: 0; }
 
-/* Layout: relatório de campo — faixa de título, 3 números, mapa satélite com pontos, depois as duas listas */
+/* Layout: relatório de campo — faixa de título, 4 números, mapa satélite com pontos, depois as listas */
 :root {
   --bg: #eef2f0; --surface: #ffffff; --surface-2: #e3e9e6; --fg: #17221e; --muted: #5a6b64; --line: #cfd9d4;
-  --sea: #2f6b5c; --tent: #c27a12; --sleep: #b33c3c; --flag: #2d5fa8; --focus: #1f7a62;
+  --sea: #2f6b5c; --tent: #c27a12; --sleep: #b33c3c; --flag: #2d5fa8; --bench: #7a4fc0; --visit: #3d8a5a; --focus: #1f7a62;
   --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
@@ -22,12 +22,12 @@ html { -webkit-text-size-adjust: 100%; } body { margin: 0; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0f1614; --surface: #17211e; --surface-2: #1f2b27; --fg: #e3ece8; --muted: #93a59e; --line: #2c3a35;
-    --sea: #6fb8a3; --tent: #e3a13d; --sleep: #e06b6b; --flag: #7aa6e8; --focus: #6fd0b2; color-scheme: dark;
+    --sea: #6fb8a3; --tent: #e3a13d; --sleep: #e06b6b; --flag: #7aa6e8; --bench: #b597ee; --visit: #74c995; --focus: #6fd0b2; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1614; --surface: #17211e; --surface-2: #1f2b27; --fg: #e3ece8; --muted: #93a59e; --line: #2c3a35;
-  --sea: #6fb8a3; --tent: #e3a13d; --sleep: #e06b6b; --flag: #7aa6e8; --focus: #6fd0b2; color-scheme: dark;
+  --sea: #6fb8a3; --tent: #e3a13d; --sleep: #e06b6b; --flag: #7aa6e8; --bench: #b597ee; --visit: #74c995; --focus: #6fd0b2; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
@@ -35,16 +35,18 @@ body { background: var(--bg); color: var(--fg); font-family: var(--body); font-s
 header { display: grid; gap: 6px; }
 .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sea); }
 h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 56px); line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
-.sub { color: var(--muted); margin: 0; max-width: 68ch; }
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.sub { color: var(--muted); margin: 0; max-width: 72ch; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
 .stat b { font-family: var(--display); font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
 .stat span { color: var(--muted); font-size: 13px; }
-.stat.flag b { color: var(--flag); } .stat.tent b { color: var(--tent); } .stat.sleep b { color: var(--sleep); }
+.stat.flag b { color: var(--flag); } .stat.tent b { color: var(--tent); } .stat.sleep b { color: var(--sleep); } .stat.visit b { color: var(--visit); }
 .mapbox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .mapbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
 .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
 .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.legend i.sq { border-radius: 2px; }
+.legend i.ring { background: transparent !important; border: 2px dashed var(--flag); box-shadow: none; }
 .ctrl { display: flex; gap: 6px; }
 .ctrl button { font: 600 15px var(--body); width: 36px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; }
 .ctrl button:focus-visible, .row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -54,15 +56,19 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 
 .stage img { display: block; width: 1600px; height: 1200px; max-width: none; user-select: none; -webkit-user-drag: none; }
 .stage svg { position: absolute; inset: 0; width: 1600px; height: 1200px; overflow: visible; }
 .mk { cursor: pointer; }
-.mk circle.dot { stroke: #fff; stroke-width: 2; }
+.mk circle.dot, .mk rect.dot { stroke: #fff; stroke-width: 2; }
 .mk text { font: 600 13px var(--body); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.75); stroke-width: 3px; pointer-events: none; }
 .mk.sel circle.halo { stroke: var(--focus); stroke-width: 3; fill: none; }
+.zona { fill: var(--flag); fill-opacity: .10; stroke: var(--flag); stroke-width: 2; stroke-dasharray: 8 6; }
+.planta { fill: var(--flag); fill-opacity: .28; stroke: var(--flag); stroke-width: 2.5; }
 .lbl { font: 700 26px var(--display); letter-spacing: .06em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 6px; pointer-events: none; }
 .hint { font-size: 12px; color: var(--muted); padding: 8px 14px; border-top: 1px solid var(--line); }
 .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
 section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
 section.card h2 { font-family: var(--display); font-size: 26px; margin: 0; padding: 14px 16px 2px; letter-spacing: .02em; }
 section.card p.note { margin: 0; padding: 0 16px 10px; color: var(--muted); font-size: 13px; }
+section.card .texto { padding: 0 16px 16px; display: grid; gap: 8px; }
+section.card .texto p { margin: 0; }
 .list { display: grid; }
 .row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; border-top: 1px solid var(--line); cursor: pointer; background: transparent; text-align: left; color: inherit; font: inherit; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; }
 .row:hover, .row.sel { background: var(--surface-2); }
@@ -72,12 +78,13 @@ section.card p.note { margin: 0; padding: 0 16px 10px; color: var(--muted); font
 .row .who small { color: var(--muted); }
 .row .when { font-family: var(--mono); font-size: 12.5px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 .chip { display: inline-block; font-size: 11.5px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
+.chip.alerta { background: color-mix(in srgb, var(--sleep) 18%, transparent); color: var(--sleep); }
 .coord { font-family: var(--mono); font-size: 12px; }
 a { color: var(--sea); }
 .empty { padding: 4px 16px 16px; color: var(--muted); }
 footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; max-width: 80ch; }
-@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .stat b { font-size: 32px; } }
-@media (max-width: 420px) { .stats { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stat b { font-size: 32px; } .row .when { white-space: normal; } }
+@media (max-width: 420px) { .row { grid-template-columns: 10px minmax(0, 1fr); } .row .when { grid-column: 2; text-align: left; } }
 @media (prefers-reduced-motion: no-preference) { .stage.anim { transition: transform .25s ease; } }
 </style>
 </head>
@@ -88,20 +95,24 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; max-wi
   <header>
     <div class="eyebrow">Brasil Veteranos · DayZ Xbox · Chernarus</div>
     <h1>Ilha da Prisão</h1>
-    <p class="sub">Quem colocou barraca, quem está deslogado e se há base com bandeira na ilha. Dados do registro do servidor lidos pelo Sentinela, conferidos em <span id="gerado"></span> (Brasília).</p>
+    <p class="sub">Quem passou pela ilha desde <span class="desde"></span>, quem está deslogado lá, as barracas, a base com bandeira e a bancada de construção. Dados do registro do servidor lidos pelo Sentinela, conferidos em <span id="gerado"></span> (Brasília).</p>
   </header>
 
   <div class="stats">
-    <div class="stat flag"><b>0</b><span>bandeiras ou bases na ilha</span></div>
-    <div class="stat tent"><b id="n-tendas">7</b><span>barracas colocadas, de <span id="n-donos">6</span> jogadores</span></div>
-    <div class="stat sleep"><b id="n-contas">4</b><span>contas deslogadas na ilha</span></div>
+    <div class="stat visit"><b id="n-visitas">0</b><span>contas passaram pela ilha desde <span class="desde"></span></span></div>
+    <div class="stat sleep"><b id="n-contas">0</b><span>contas deslogadas na ilha agora</span></div>
+    <div class="stat flag"><b id="n-bases">0</b><span>base com bandeira na ilha</span></div>
+    <div class="stat tent"><b id="n-tendas">0</b><span>barracas colocadas, de <span id="n-donos">0</span> jogadores</span></div>
   </div>
 
   <div class="mapbox">
     <div class="mapbar">
       <div class="legend">
-        <span><i style="background:var(--tent)"></i>Barraca colocada</span>
         <span><i style="background:var(--sleep)"></i>Conta deslogada</span>
+        <span><i style="background:var(--tent)"></i>Barraca colocada</span>
+        <span><i style="background:var(--flag)"></i>Bandeira e base</span>
+        <span><i class="ring"></i>45 m da bandeira (Mar Morto)</span>
+        <span><i class="sq" style="background:var(--bench)"></i>Bancada de construção</span>
       </div>
       <div class="ctrl">
         <button type="button" id="zin" aria-label="Aproximar">+</button>
@@ -118,6 +129,12 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; max-wi
     <div class="hint">Toque num ponto (ou numa linha da lista) para ver quem é. Arraste para mover, use dois dedos ou a roda do mouse para dar zoom. Satélite do jogo, 2 px por metro.</div>
   </div>
 
+  <section class="card">
+    <h2>Quem passou pela ilha</h2>
+    <p class="note">Desde <span class="desde"></span> (Brasília). Tempo aproximado pela lista de jogadores do servidor, que sai a cada ~5 min. Toque na linha para ver o último ponto da conta na ilha.</p>
+    <div class="list" id="lista-visitas"></div>
+  </section>
+
   <div class="grid2">
     <section class="card">
       <h2>Contas deslogadas</h2>
@@ -131,69 +148,386 @@ footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; max-wi
     </section>
   </div>
 
-  <section class="card">
-    <h2>Bandeiras</h2>
-    <p class="empty">Nenhuma base com bandeira na ilha, de nenhum clã. Sem bandeira, nenhuma regra de base vale aqui: deslogar ou pôr barraca na ilha não leva ninguém ao Mar Morto.</p>
-  </section>
+  <div class="grid2">
+    <section class="card">
+      <h2>Bandeiras</h2>
+      <div class="texto" id="texto-bases"></div>
+    </section>
+    <section class="card">
+      <h2>Bancada de construção</h2>
+      <div class="texto" id="texto-bancada"></div>
+    </section>
+  </div>
 
   <footer>
-    <span>Horários em Brasília. Posições pela lista de jogadores do servidor (a cada ~5 min) e pelas linhas de construção do registro.</span>
-    <span>Coordenadas no padrão do iZurvive (x / z); cada linha abre o ponto no mapa do iZurvive.</span>
+    <span>Horários em Brasília. Posições pela lista de jogadores do servidor (a cada ~5 min), pelas entradas e saídas do jogo e pelas linhas de construção do registro.</span>
+    <span>Coordenadas no padrão do iZurvive (x / z); cada coordenada abre o ponto no mapa do iZurvive.</span>
   </footer>
 </div>
 
 <script>
 const D = {
-  gerado: "14/10/2026 21:54",
-  caixa: { x0: 2300, x1: 3100, z0: 1050, z1: 1650 }, img: { w: 1600, h: 1200 },
-  rotulos: [{ t: "PRISÃO", x: 2775, z: 1300 }, { t: "PÍER", x: 2465, z: 1382 }],
-  tendas: [
-    { quando: "10/10 11:20", objeto: "Grande", x: 2617.0, z: 1279.5, nome: "Magno2087", cla: "Veteranos do apocalipse" },
-    { quando: "10/10 17:08", objeto: "Grande", x: 2515.2, z: 1303.9, nome: "Sagitario7768", cla: "Sem clã" },
-    { quando: "12/10 10:57", objeto: "Grande", x: 2792.6, z: 1221.8, nome: "Lolo14819", cla: "Sem clã" },
-    { quando: "12/10 22:55", objeto: "Grande", x: 2788.9, z: 1221.5, nome: "xHenri2010x", cla: "Sem clã" },
-    { quando: "13/10 10:27", objeto: "Grande", x: 2785.1, z: 1224.3, nome: "Domatteo9016", cla: "Sem clã" },
-    { quando: "13/10 14:28", objeto: "Média", x: 2789.6, z: 1226.5, nome: "BIRULEIBE4829", cla: "Sem clã" },
-    { quando: "14/10 12:22", objeto: "Grande", x: 2793.7, z: 1223.8, nome: "Lolo14819", cla: "Sem clã" }
+  "gerado": "15/10/2026 17:55",
+  "desde": "14/10 19:00",
+  "caixa": {
+    "x0": 2300,
+    "x1": 3100,
+    "z0": 1050,
+    "z1": 1650
+  },
+  "img": {
+    "w": 1600,
+    "h": 1200
+  },
+  "rotulos": [
+    {
+      "t": "PRISÃO",
+      "x": 2775,
+      "z": 1300
+    },
+    {
+      "t": "PÍER",
+      "x": 2465,
+      "z": 1382
+    }
   ],
-  contas: [
-    { saiu: "14/10 20:03", x: 2774.4, z: 1234.0, nome: "PaiLeleu", cla: "Sem clã", obs: "colado no acampamento de barracas" },
-    { saiu: "14/10 16:20", x: 2758.4, z: 1285.5, nome: "MestreKameJR", cla: "Sem clã", obs: "dentro da prisão" },
-    { saiu: "13/10 17:13", x: 2659.8, z: 1563.8, nome: "l00LIMITI", cla: "Sem clã", obs: "na ilhota ao norte" },
-    { saiu: "10/10 17:51", x: 2514.5, z: 1308.1, nome: "Sagitario7768", cla: "Sem clã", obs: "junto da barraca dele" }
+  "bases": [
+    {
+      "nome": "MestreKameJR",
+      "cla": "CTI 2.0",
+      "membros": [
+        "Val Kilmer3207",
+        "Vovo PB",
+        "Lampião PB",
+        "Al Jazeera8261"
+      ],
+      "x": 2776.7,
+      "z": 1257.5,
+      "desde": "14/10 23:03",
+      "planta": [
+        [
+          2739.4,
+          1286.0
+        ],
+        [
+          2739.5,
+          1285.2
+        ],
+        [
+          2790.0,
+          1228.1
+        ],
+        [
+          2791.2,
+          1226.9
+        ],
+        [
+          2792.9,
+          1225.7
+        ],
+        [
+          2793.7,
+          1225.3
+        ],
+        [
+          2795.8,
+          1225.1
+        ],
+        [
+          2799.1,
+          1225.8
+        ],
+        [
+          2812.4,
+          1236.0
+        ],
+        [
+          2813.7,
+          1237.7
+        ],
+        [
+          2813.7,
+          1239.0
+        ],
+        [
+          2795.3,
+          1267.4
+        ],
+        [
+          2794.9,
+          1267.9
+        ],
+        [
+          2744.7,
+          1286.4
+        ],
+        [
+          2740.0,
+          1286.4
+        ],
+        [
+          2739.4,
+          1286.2
+        ]
+      ]
+    }
+  ],
+  "raio": 45.0,
+  "bancada": {
+    "x": 2782.12,
+    "z": 1193.48,
+    "desde": "15/10 ~18:21",
+    "antes": {
+      "x": 2786.98,
+      "z": 1222.89
+    }
+  },
+  "tendas": [
+    {
+      "quando": "10/10 11:20",
+      "objeto": "Grande",
+      "x": 2617.0,
+      "z": 1279.5,
+      "nome": "Magno2087",
+      "cla": "Veteranos do apocalipse"
+    },
+    {
+      "quando": "10/10 17:08",
+      "objeto": "Grande",
+      "x": 2515.2,
+      "z": 1303.9,
+      "nome": "Sagitario7768",
+      "cla": "Sem clã"
+    },
+    {
+      "quando": "12/10 10:57",
+      "objeto": "Grande",
+      "x": 2792.6,
+      "z": 1221.8,
+      "nome": "Lolo14819",
+      "cla": "Sem clã"
+    },
+    {
+      "quando": "12/10 22:55",
+      "objeto": "Grande",
+      "x": 2788.9,
+      "z": 1221.5,
+      "nome": "xHenri2010x",
+      "cla": "Sem clã"
+    },
+    {
+      "quando": "13/10 10:27",
+      "objeto": "Grande",
+      "x": 2785.1,
+      "z": 1224.3,
+      "nome": "Domatteo9016",
+      "cla": "Sem clã"
+    },
+    {
+      "quando": "13/10 14:28",
+      "objeto": "Média",
+      "x": 2789.6,
+      "z": 1226.5,
+      "nome": "BIRULEIBE4829",
+      "cla": "Sem clã"
+    },
+    {
+      "quando": "14/10 12:22",
+      "objeto": "Grande",
+      "x": 2793.7,
+      "z": 1223.8,
+      "nome": "Lolo14819",
+      "cla": "Sem clã"
+    }
+  ],
+  "contas": [
+    {
+      "saiu": "15/10 17:28",
+      "x": 2812.8,
+      "z": 1243.1,
+      "nome": "MestreKameJR",
+      "cla": "CTI 2.0",
+      "obs": "a 39 m da bandeira de MestreKameJR (dentro dos 45 m da base)"
+    },
+    {
+      "saiu": "15/10 17:17",
+      "x": 2743.0,
+      "z": 1275.2,
+      "nome": "Al Jazeera8261",
+      "cla": "CTI 2.0",
+      "obs": "Mar Morto (banido até o reinício): deslogou dentro da base de MestreKameJR"
+    },
+    {
+      "saiu": "14/10 23:50",
+      "x": 2827.5,
+      "z": 1231.7,
+      "nome": "Tuks504",
+      "cla": "Sem clã",
+      "obs": "a 57 m da bandeira de MestreKameJR (fora da base)"
+    },
+    {
+      "saiu": "14/10 23:21",
+      "x": 2780.4,
+      "z": 1235.2,
+      "nome": "Val Kilmer3207",
+      "cla": "CTI 2.0",
+      "obs": "Mar Morto (esperando ele voltar): deslogou dentro da base de MestreKameJR"
+    },
+    {
+      "saiu": "14/10 20:03",
+      "x": 2774.4,
+      "z": 1234.0,
+      "nome": "PaiLeleu",
+      "cla": "Sem clã",
+      "obs": "a 24 m da bandeira de MestreKameJR (dentro dos 45 m da base)"
+    },
+    {
+      "saiu": "13/10 17:13",
+      "x": 2659.8,
+      "z": 1563.8,
+      "nome": "l00LIMITI",
+      "cla": "Sem clã",
+      "obs": "longe de base"
+    }
+  ],
+  "visitas": [
+    {
+      "nome": "PaiLeleu",
+      "cla": "Sem clã",
+      "de": "14/10 19:52",
+      "ate": "14/10 20:03",
+      "min": 15,
+      "feito": "saiu do jogo ali 1x",
+      "x": 2774.4,
+      "z": 1234.0
+    },
+    {
+      "nome": "MestreKameJR",
+      "cla": "CTI 2.0",
+      "de": "14/10 22:32",
+      "ate": "15/10 17:28",
+      "min": 140,
+      "feito": "56 obras, entrou no jogo ali 5x, saiu do jogo ali 5x",
+      "x": 2812.8,
+      "z": 1243.1
+    },
+    {
+      "nome": "Val Kilmer3207",
+      "cla": "CTI 2.0",
+      "de": "14/10 22:51",
+      "ate": "14/10 23:21",
+      "min": 30,
+      "feito": "saiu do jogo ali 1x, Mar Morto",
+      "x": 2780.4,
+      "z": 1235.2
+    },
+    {
+      "nome": "Tuks504",
+      "cla": "Sem clã",
+      "de": "14/10 23:36",
+      "ate": "14/10 23:50",
+      "min": 15,
+      "feito": "saiu do jogo ali 1x",
+      "x": 2827.5,
+      "z": 1231.7
+    },
+    {
+      "nome": "Sagitario7768",
+      "cla": "Sem clã",
+      "de": "15/10 02:34",
+      "ate": "15/10 02:43",
+      "min": 10,
+      "feito": "entrou no jogo ali 1x",
+      "x": 2479.5,
+      "z": 1490.7
+    },
+    {
+      "nome": "Lolo14819",
+      "cla": "Sem clã",
+      "de": "15/10 08:00",
+      "ate": "15/10 15:53",
+      "min": 25,
+      "feito": "entrou no jogo ali 1x, saiu do jogo ali 1x, matou Guttogospel",
+      "x": 2637.5,
+      "z": 1381.2
+    },
+    {
+      "nome": "Guttogospel",
+      "cla": "Sem clã",
+      "de": "15/10 15:38",
+      "ate": "15/10 15:38",
+      "min": 5,
+      "feito": "morreu ali (morto por Lolo14819)",
+      "x": 2678.3,
+      "z": 1336.7
+    },
+    {
+      "nome": "Al Jazeera8261",
+      "cla": "CTI 2.0",
+      "de": "15/10 17:11",
+      "ate": "15/10 17:17",
+      "min": 10,
+      "feito": "saiu do jogo ali 1x, Mar Morto",
+      "x": 2743.0,
+      "z": 1275.2
+    }
   ]
 };
+let k = 1, tx = 0, ty = 0;   // zoom e deslocamento do mapa
 const K = D.img.w / (D.caixa.x1 - D.caixa.x0);
 const px = (x) => (x - D.caixa.x0) * K, py = (z) => (D.caixa.z1 - z) * K;
 const izu = (x, z) => "https://www.izurvive.com/chernarusplussatmap/#location=" + x.toFixed(2) + ";" + z.toFixed(2);
+const coordLink = (x, z) => { const a = document.createElement("a"); a.href = izu(x, z); a.target = "_blank"; a.rel = "noopener"; a.className = "coord"; a.textContent = Math.round(x) + " / " + Math.round(z); a.addEventListener("click", e => e.stopPropagation()); return a; };
 document.getElementById("gerado").textContent = D.gerado;
+document.querySelectorAll(".desde").forEach(e => e.textContent = D.desde);
+document.getElementById("n-visitas").textContent = D.visitas.length;
+document.getElementById("n-contas").textContent = D.contas.length;
+document.getElementById("n-bases").textContent = D.bases.length;
 document.getElementById("n-tendas").textContent = D.tendas.length;
 document.getElementById("n-donos").textContent = new Set(D.tendas.map(t => t.nome)).size;
-document.getElementById("n-contas").textContent = D.contas.length;
 
-// pontos: agrupa o que está a menos de 12 m (o acampamento tem 4 barracas quase no mesmo lugar)
-const itens = [
-  ...D.contas.map((c, i) => ({ id: "c" + i, tipo: "sleep", x: c.x, z: c.z, ref: c })),
-  ...D.tendas.map((t, i) => ({ id: "t" + i, tipo: "tent", x: t.x, z: t.z, ref: t }))
-];
-const grupos = [];
-for (const it of itens) {
-  const g = grupos.find(g => g.tipo === it.tipo && Math.hypot(g.x - it.x, g.z - it.z) < 12);
-  if (g) { g.itens.push(it); } else { grupos.push({ tipo: it.tipo, x: it.x, z: it.z, itens: [it] }); }
-}
 const svg = document.getElementById("marks"), NS = "http://www.w3.org/2000/svg";
+// área de cada base: 45 m da bandeira (tracejado) e a planta das obras (cheia), na escala do mapa
+for (const b of D.bases) {
+  const z = document.createElementNS(NS, "circle");
+  z.setAttribute("cx", px(b.x)); z.setAttribute("cy", py(b.z)); z.setAttribute("r", D.raio * K); z.setAttribute("class", "zona");
+  z.setAttribute("vector-effect", "non-scaling-stroke"); svg.appendChild(z);
+  if (b.planta.length >= 3) {
+    const p = document.createElementNS(NS, "polygon");
+    p.setAttribute("points", b.planta.map(q => px(q[0]) + "," + py(q[1])).join(" ")); p.setAttribute("class", "planta");
+    p.setAttribute("vector-effect", "non-scaling-stroke"); svg.appendChild(p);
+  }
+}
 for (const r of D.rotulos) {
   const t = document.createElementNS(NS, "text");
   t.setAttribute("x", px(r.x)); t.setAttribute("y", py(r.z)); t.setAttribute("class", "lbl"); t.setAttribute("text-anchor", "middle");
   t.textContent = r.t; svg.appendChild(t);
 }
+
+// pontos: agrupa o que é do mesmo tipo a menos de 12 m (o acampamento tem 4 barracas quase no mesmo lugar)
+const itens = [
+  ...D.contas.map((c, i) => ({ id: "c" + i, tipo: "sleep", x: c.x, z: c.z, ref: c })),
+  ...D.tendas.map((t, i) => ({ id: "t" + i, tipo: "tent", x: t.x, z: t.z, ref: t })),
+  ...D.bases.map((b, i) => ({ id: "b" + i, tipo: "flag", x: b.x, z: b.z, ref: b })),
+  { id: "bancada", tipo: "bench", x: D.bancada.x, z: D.bancada.z, ref: { nome: "Bancada de construção" } },
+  ...D.visitas.map((v, i) => ({ id: "v" + i, tipo: "visit", x: v.x, z: v.z, ref: v }))
+];
+const cor = { sleep: "var(--sleep)", tent: "var(--tent)", flag: "var(--flag)", bench: "var(--bench)" };
+const grupos = [];
+for (const it of itens) {
+  if (it.tipo === "visit") continue;   // quem passou fica na lista; o ponto aparece ao tocar na linha
+  const g = grupos.find(g => g.tipo === it.tipo && Math.hypot(g.x - it.x, g.z - it.z) < 12);
+  if (g) { g.itens.push(it); } else { grupos.push({ tipo: it.tipo, x: it.x, z: it.z, itens: [it] }); }
+}
 const marcas = [];
-grupos.forEach((g, gi) => {
+function marcar(g) {
   const el = document.createElementNS(NS, "g");
   el.setAttribute("class", "mk"); el.dataset.ids = g.itens.map(i => i.id).join(",");
   const halo = document.createElementNS(NS, "circle"); halo.setAttribute("class", "halo"); halo.setAttribute("r", 14); halo.setAttribute("fill", "none");
-  const dot = document.createElementNS(NS, "circle"); dot.setAttribute("class", "dot"); dot.setAttribute("r", 9);
-  dot.style.fill = g.tipo === "tent" ? "var(--tent)" : "var(--sleep)";
+  let dot;
+  if (g.tipo === "bench") { dot = document.createElementNS(NS, "rect"); dot.setAttribute("x", -9); dot.setAttribute("y", -9); dot.setAttribute("width", 18); dot.setAttribute("height", 18); dot.setAttribute("rx", 3); }
+  else { dot = document.createElementNS(NS, "circle"); dot.setAttribute("r", 9); }
+  dot.setAttribute("class", "dot"); dot.style.fill = cor[g.tipo] || "var(--visit)";
   el.append(halo, dot);
   if (g.itens.length > 1) {
     const n = document.createElementNS(NS, "text"); n.setAttribute("text-anchor", "middle"); n.setAttribute("dy", "4"); n.textContent = g.itens.length;
@@ -201,52 +535,80 @@ grupos.forEach((g, gi) => {
   }
   const off = g.tipo === "sleep" ? -1 : 1;
   const lab = document.createElementNS(NS, "text"); lab.setAttribute("x", 14); lab.setAttribute("y", off * 4 + 4);
-  lab.textContent = g.itens.length > 1 ? "Acampamento · " + g.itens.length + " barracas" : (g.itens[0].ref.nome);
+  lab.textContent = g.tipo === "tent" && g.itens.length > 1 ? "Acampamento · " + g.itens.length + " barracas"
+    : g.tipo === "flag" ? "Bandeira de " + g.itens[0].ref.nome : (g.itens.length > 1 ? g.itens.length + " contas" : g.itens[0].ref.nome);
   // barraca do mesmo jogador colada no ponto onde ele deslogou: o nome aparece uma vez só
-  const repetido = g.tipo === "tent" && g.itens.length === 1 && grupos.some(o => o.tipo === "sleep" && o.itens[0].ref.nome === g.itens[0].ref.nome && Math.hypot(o.x - g.x, o.z - g.z) < 15);
+  const repetido = g.tipo === "tent" && g.itens.length === 1 && grupos.some(o => o.tipo === "sleep" && o.itens.some(i => i.ref.nome === g.itens[0].ref.nome) && Math.hypot(o.x - g.x, o.z - g.z) < 15);
   if (!repetido) el.appendChild(lab);
   el.addEventListener("click", (e) => { e.stopPropagation(); selecionar(g.itens[0].id, false); });
   svg.appendChild(el);
-  marcas.push({ el, gx: px(g.x), gy: py(g.z) });
-});
+  const m = { el, gx: px(g.x), gy: py(g.z) }; marcas.push(m); aplicarUma(m);
+  return m;
+}
+grupos.forEach(marcar);
+let visita = null;   // ponto temporário de quem passou pela ilha
 
 // listas
-function linha(lista, id, sw, titulo, sub, quando, x, z) {
+function linha(lista, id, sw, titulo, sub, quando, x, z, chip) {
   const b = document.createElement("button");
   b.type = "button"; b.className = "row"; b.id = "row-" + id;
   b.innerHTML = '<span class="sw" style="background:' + sw + '"></span><span class="who"><b></b><small></small></span><span class="when"></span>';
   b.querySelector("b").textContent = titulo;
-  b.querySelector("small").innerHTML = "";
-  b.querySelector("small").append(document.createTextNode(sub + " · "));
-  const a = document.createElement("a"); a.href = izu(x, z); a.target = "_blank"; a.rel = "noopener"; a.className = "coord";
-  a.textContent = Math.round(x) + " / " + Math.round(z); a.addEventListener("click", e => e.stopPropagation());
-  b.querySelector("small").appendChild(a);
+  if (chip) { const c = document.createElement("span"); c.className = "chip" + (chip.alerta ? " alerta" : ""); c.textContent = chip.t; b.querySelector("b").appendChild(c); }
+  b.querySelector("small").append(document.createTextNode(sub + " · "), coordLink(x, z));
   b.querySelector(".when").textContent = quando;
   b.addEventListener("click", () => selecionar(id, true));
   lista.appendChild(b);
 }
-const lc = document.getElementById("lista-contas"), lt = document.getElementById("lista-tendas");
-D.contas.forEach((c, i) => linha(lc, "c" + i, "var(--sleep)", c.nome, c.cla + " · " + c.obs, "saiu " + c.saiu, c.x, c.z));
-D.tendas.forEach((t, i) => linha(lt, "t" + i, "var(--tent)", t.nome, t.cla + " · barraca " + t.objeto.toLowerCase(), t.quando, t.x, t.z));
-D.tendas.forEach((t, i) => {
-  if (Math.hypot(t.x - 2790, t.z - 1223.5) < 12) {
-    const s = document.querySelector("#row-t" + i + " .who b"); const c = document.createElement("span"); c.className = "chip"; c.textContent = "acampamento"; s.appendChild(c);
-  }
-});
+const lv = document.getElementById("lista-visitas"), lc = document.getElementById("lista-contas"), lt = document.getElementById("lista-tendas");
+D.visitas.forEach((v, i) => linha(lv, "v" + i, "var(--visit)", v.nome, v.cla + " · " + v.feito, (v.de === v.ate ? v.de : v.de + " → " + v.ate) + " · ~" + v.min + " min", v.x, v.z,
+  /Mar Morto/.test(v.feito) ? { t: "Mar Morto", alerta: true } : null));
+D.contas.forEach((c, i) => linha(lc, "c" + i, "var(--sleep)", c.nome, c.cla + " · " + c.obs, "saiu " + c.saiu, c.x, c.z,
+  /Mar Morto/.test(c.obs) ? { t: "Mar Morto", alerta: true } : null));
+if (!D.contas.length) lc.insertAdjacentHTML("beforeend", '<p class="empty">Ninguém deslogado na ilha agora.</p>');
+D.tendas.forEach((t, i) => linha(lt, "t" + i, "var(--tent)", t.nome, t.cla + " · barraca " + t.objeto.toLowerCase(), t.quando, t.x, t.z,
+  Math.hypot(t.x - 2790, t.z - 1223.5) < 12 ? { t: "acampamento" } : null));
+
+// textos da base e da bancada
+const tb = document.getElementById("texto-bases");
+if (!D.bases.length) {
+  tb.innerHTML = '<p class="empty">Nenhuma base com bandeira na ilha, de nenhum clã.</p>';
+}
+for (const b of D.bases) {
+  const p1 = document.createElement("p");
+  p1.append(document.createTextNode("Base de "), Object.assign(document.createElement("b"), { textContent: b.nome }),
+    document.createTextNode(" · clã " + b.cla + (b.membros.length ? " (" + b.membros.join(", ") + ")" : "") + ". Bandeira desde " + b.desde + " em "), coordLink(b.x, b.z), document.createTextNode("."));
+  const presos = D.contas.filter(c => /Mar Morto/.test(c.obs)).map(c => c.nome);
+  const p2 = document.createElement("p");
+  p2.textContent = "Até " + D.raio + " m da bandeira (círculo tracejado no mapa) valem as regras de base: quem desloga ali sem ser do clã vai para o Mar Morto." +
+    (presos.length ? " Já foram: " + presos.join(" e ") + "." : "") + " A área cheia é a planta das obras, onde sai o alarme de quem anda dentro da base.";
+  tb.append(p1, p2);
+}
+const tx2 = document.getElementById("texto-bancada"), bn = D.bancada;
+const pb1 = document.createElement("p");
+pb1.append(document.createTextNode("Desde o reinício de " + bn.desde + " a bancada fica em "), coordLink(bn.x, bn.z),
+  document.createTextNode(" (quadrado roxo no mapa), em chão aberto e plano."));
+tx2.appendChild(pb1);
+if (D.bases.length) {
+  const b = D.bases[0], d = Math.hypot(bn.x - b.x, bn.z - b.z), d0 = Math.hypot(bn.antes.x - b.x, bn.antes.z - b.z);
+  const pb2 = document.createElement("p");
+  pb2.append(document.createTextNode("Fica a " + Math.round(d) + " m da bandeira de " + b.nome + ", fora da base: dá para usar e deslogar ali sem cair no Mar Morto. Antes ficava no acampamento de barracas ("),
+    coordLink(bn.antes.x, bn.antes.z), document.createTextNode("), a " + Math.round(d0) + " m da bandeira, dentro da área da base."));
+  tx2.appendChild(pb2);
+}
 
 // mapa: arrastar, zoom pela roda, pinça e botões
 const vp = document.getElementById("vp"), stage = document.getElementById("stage");
-let k = 1, tx = 0, ty = 0;
 function caber() { const w = vp.clientWidth, h = vp.clientHeight; return Math.max(w / D.img.w, h / D.img.h); }
 function limitar() {
   const w = vp.clientWidth, h = vp.clientHeight, sw = D.img.w * k, sh = D.img.h * k;
   tx = Math.min(0, Math.max(w - sw, tx)); ty = Math.min(0, Math.max(h - sh, ty));
 }
+function aplicarUma(m) { m.el.setAttribute("transform", "translate(" + m.gx + "," + m.gy + ") scale(" + (0.95 / k) + ")"); }
 function aplicar() {
   limitar();
   stage.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + k + ")";
-  const s = 0.95 / k;   // o ponto fica com ~13 px na tela em qualquer zoom
-  for (const m of marcas) m.el.setAttribute("transform", "translate(" + m.gx + "," + m.gy + ") scale(" + s + ")");
+  for (const m of marcas) aplicarUma(m);   // o ponto fica com ~13 px na tela em qualquer zoom
   for (const t of svg.querySelectorAll(".lbl")) { t.style.fontSize = (14 / k) + "px"; t.style.strokeWidth = (3 / k) + "px"; }
 }
 function zoom(f, cx, cy, anim) {
@@ -285,9 +647,12 @@ new ResizeObserver(() => reset(false)).observe(vp);
 
 function selecionar(id, mover) {
   document.querySelectorAll(".row.sel, .mk.sel").forEach(e => e.classList.remove("sel"));
+  if (visita) { visita.el.remove(); marcas.splice(marcas.indexOf(visita), 1); visita = null; }
   const row = document.getElementById("row-" + id); if (row) row.classList.add("sel");
-  const m = marcas.find(m => m.el.dataset.ids.split(",").includes(id)); if (m) m.el.classList.add("sel");
   const it = itens.find(i => i.id === id);
+  let m = marcas.find(m => m.el.dataset.ids.split(",").includes(id));
+  if (!m && it && it.tipo === "visit") { m = visita = marcar({ tipo: "visit", x: it.x, z: it.z, itens: [it] }); }
+  if (m) m.el.classList.add("sel");
   if (mover && it) { centrar(it.x, it.z); vp.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
   else if (row) { row.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
 }
