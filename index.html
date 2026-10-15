@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Ilha da Prisão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+html { -webkit-text-size-adjust: 100%; } body { margin: 0; }
+
+/* Layout: relatório de campo — faixa de título, 3 números, mapa satélite com pontos, depois as duas listas */
+:root {
+  --bg: #eef2f0; --surface: #ffffff; --surface-2: #e3e9e6; --fg: #17221e; --muted: #5a6b64; --line: #cfd9d4;
+  --sea: #2f6b5c; --tent: #c27a12; --sleep: #b33c3c; --flag: #2d5fa8; --focus: #1f7a62;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1614; --surface: #17211e; --surface-2: #1f2b27; --fg: #e3ece8; --muted: #93a59e; --line: #2c3a35;
+    --sea: #6fb8a3; --tent: #e3a13d; --sleep: #e06b6b; --flag: #7aa6e8; --focus: #6fd0b2; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1614; --surface: #17211e; --surface-2: #1f2b27; --fg: #e3ece8; --muted: #93a59e; --line: #2c3a35;
+  --sea: #6fb8a3; --tent: #e3a13d; --sleep: #e06b6b; --flag: #7aa6e8; --focus: #6fd0b2; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 20px 48px; display: grid; gap: 20px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--sea); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 56px); line-height: 1; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; max-width: 68ch; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 2px; min-width: 0; }
+.stat b { font-family: var(--display); font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 13px; }
+.stat.flag b { color: var(--flag); } .stat.tent b { color: var(--tent); } .stat.sleep b { color: var(--sleep); }
+.mapbox { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.mapbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; border: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.ctrl { display: flex; gap: 6px; }
+.ctrl button { font: 600 15px var(--body); width: 36px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; }
+.ctrl button:focus-visible, .row:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.viewport { position: relative; width: 100%; aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; background: #3d6b5c; touch-action: none; cursor: grab; }
+.viewport.drag { cursor: grabbing; }
+.stage { position: absolute; left: 0; top: 0; width: 1600px; height: 1200px; transform-origin: 0 0; }
+.stage img { display: block; width: 1600px; height: 1200px; max-width: none; user-select: none; -webkit-user-drag: none; }
+.stage svg { position: absolute; inset: 0; width: 1600px; height: 1200px; overflow: visible; }
+.mk { cursor: pointer; }
+.mk circle.dot { stroke: #fff; stroke-width: 2; }
+.mk text { font: 600 13px var(--body); fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.75); stroke-width: 3px; pointer-events: none; }
+.mk.sel circle.halo { stroke: var(--focus); stroke-width: 3; fill: none; }
+.lbl { font: 700 26px var(--display); letter-spacing: .06em; fill: #fff; paint-order: stroke; stroke: rgba(0,0,0,.7); stroke-width: 6px; pointer-events: none; }
+.hint { font-size: 12px; color: var(--muted); padding: 8px 14px; border-top: 1px solid var(--line); }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+section.card h2 { font-family: var(--display); font-size: 26px; margin: 0; padding: 14px 16px 2px; letter-spacing: .02em; }
+section.card p.note { margin: 0; padding: 0 16px 10px; color: var(--muted); font-size: 13px; }
+.list { display: grid; }
+.row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 16px; border-top: 1px solid var(--line); cursor: pointer; background: transparent; text-align: left; color: inherit; font: inherit; width: 100%; border-left: 0; border-right: 0; border-bottom: 0; }
+.row:hover, .row.sel { background: var(--surface-2); }
+.row .sw { width: 10px; height: 10px; border-radius: 50%; }
+.row .who { min-width: 0; }
+.row .who b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.row .who small { color: var(--muted); }
+.row .when { font-family: var(--mono); font-size: 12.5px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.chip { display: inline-block; font-size: 11.5px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--muted); margin-left: 6px; vertical-align: 1px; }
+.coord { font-family: var(--mono); font-size: 12px; }
+a { color: var(--sea); }
+.empty { padding: 4px 16px 16px; color: var(--muted); }
+footer { color: var(--muted); font-size: 12.5px; display: grid; gap: 4px; max-width: 80ch; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } .stat b { font-size: 32px; } }
+@media (max-width: 420px) { .stats { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: no-preference) { .stage.anim { transition: transform .25s ease; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Brasil Veteranos · DayZ Xbox · Chernarus</div>
+    <h1>Ilha da Prisão</h1>
+    <p class="sub">Quem colocou barraca, quem está deslogado e se há base com bandeira na ilha. Dados do registro do servidor lidos pelo Sentinela, conferidos em <span id="gerado"></span> (Brasília).</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat flag"><b>0</b><span>bandeiras ou bases na ilha</span></div>
+    <div class="stat tent"><b id="n-tendas">7</b><span>barracas colocadas, de <span id="n-donos">6</span> jogadores</span></div>
+    <div class="stat sleep"><b id="n-contas">4</b><span>contas deslogadas na ilha</span></div>
+  </div>
+
+  <div class="mapbox">
+    <div class="mapbar">
+      <div class="legend">
+        <span><i style="background:var(--tent)"></i>Barraca colocada</span>
+        <span><i style="background:var(--sleep)"></i>Conta deslogada</span>
+      </div>
+      <div class="ctrl">
+        <button type="button" id="zin" aria-label="Aproximar">+</button>
+        <button type="button" id="zout" aria-label="Afastar">−</button>
+        <button type="button" id="zreset" aria-label="Ver a ilha inteira">⟲</button>
+      </div>
+    </div>
+    <div class="viewport" id="vp">
+      <div class="stage" id="stage">
+        <img src="prisao.jpg" alt="Satélite da Ilha da Prisão" draggable="false">
+        <svg id="marks" viewBox="0 0 1600 1200" aria-hidden="true"></svg>
+      </div>
+    </div>
+    <div class="hint">Toque num ponto (ou numa linha da lista) para ver quem é. Arraste para mover, use dois dedos ou a roda do mouse para dar zoom. Satélite do jogo, 2 px por metro.</div>
+  </div>
+
+  <div class="grid2">
+    <section class="card">
+      <h2>Contas deslogadas</h2>
+      <p class="note">Última posição vista pelo Sentinela; todas fora do servidor agora.</p>
+      <div class="list" id="lista-contas"></div>
+    </section>
+    <section class="card">
+      <h2>Barracas colocadas</h2>
+      <p class="note">O registro mostra quando a barraca é colocada, não quando some. Pode já ter sido desmontada ou apodrecido.</p>
+      <div class="list" id="lista-tendas"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Bandeiras</h2>
+    <p class="empty">Nenhuma base com bandeira na ilha, de nenhum clã. Sem bandeira, nenhuma regra de base vale aqui: deslogar ou pôr barraca na ilha não leva ninguém ao Mar Morto.</p>
+  </section>
+
+  <footer>
+    <span>Horários em Brasília. Posições pela lista de jogadores do servidor (a cada ~5 min) e pelas linhas de construção do registro.</span>
+    <span>Coordenadas no padrão do iZurvive (x / z); cada linha abre o ponto no mapa do iZurvive.</span>
+  </footer>
+</div>
+
+<script>
+const D = {
+  gerado: "14/10/2026 21:54",
+  caixa: { x0: 2300, x1: 3100, z0: 1050, z1: 1650 }, img: { w: 1600, h: 1200 },
+  rotulos: [{ t: "PRISÃO", x: 2775, z: 1300 }, { t: "PÍER", x: 2465, z: 1382 }],
+  tendas: [
+    { quando: "10/10 11:20", objeto: "Grande", x: 2617.0, z: 1279.5, nome: "Magno2087", cla: "Veteranos do apocalipse" },
+    { quando: "10/10 17:08", objeto: "Grande", x: 2515.2, z: 1303.9, nome: "Sagitario7768", cla: "Sem clã" },
+    { quando: "12/10 10:57", objeto: "Grande", x: 2792.6, z: 1221.8, nome: "Lolo14819", cla: "Sem clã" },
+    { quando: "12/10 22:55", objeto: "Grande", x: 2788.9, z: 1221.5, nome: "xHenri2010x", cla: "Sem clã" },
+    { quando: "13/10 10:27", objeto: "Grande", x: 2785.1, z: 1224.3, nome: "Domatteo9016", cla: "Sem clã" },
+    { quando: "13/10 14:28", objeto: "Média", x: 2789.6, z: 1226.5, nome: "BIRULEIBE4829", cla: "Sem clã" },
+    { quando: "14/10 12:22", objeto: "Grande", x: 2793.7, z: 1223.8, nome: "Lolo14819", cla: "Sem clã" }
+  ],
+  contas: [
+    { saiu: "14/10 20:03", x: 2774.4, z: 1234.0, nome: "PaiLeleu", cla: "Sem clã", obs: "colado no acampamento de barracas" },
+    { saiu: "14/10 16:20", x: 2758.4, z: 1285.5, nome: "MestreKameJR", cla: "Sem clã", obs: "dentro da prisão" },
+    { saiu: "13/10 17:13", x: 2659.8, z: 1563.8, nome: "l00LIMITI", cla: "Sem clã", obs: "na ilhota ao norte" },
+    { saiu: "10/10 17:51", x: 2514.5, z: 1308.1, nome: "Sagitario7768", cla: "Sem clã", obs: "junto da barraca dele" }
+  ]
+};
+const K = D.img.w / (D.caixa.x1 - D.caixa.x0);
+const px = (x) => (x - D.caixa.x0) * K, py = (z) => (D.caixa.z1 - z) * K;
+const izu = (x, z) => "https://www.izurvive.com/chernarusplussatmap/#location=" + x.toFixed(2) + ";" + z.toFixed(2);
+document.getElementById("gerado").textContent = D.gerado;
+document.getElementById("n-tendas").textContent = D.tendas.length;
+document.getElementById("n-donos").textContent = new Set(D.tendas.map(t => t.nome)).size;
+document.getElementById("n-contas").textContent = D.contas.length;
+
+// pontos: agrupa o que está a menos de 12 m (o acampamento tem 4 barracas quase no mesmo lugar)
+const itens = [
+  ...D.contas.map((c, i) => ({ id: "c" + i, tipo: "sleep", x: c.x, z: c.z, ref: c })),
+  ...D.tendas.map((t, i) => ({ id: "t" + i, tipo: "tent", x: t.x, z: t.z, ref: t }))
+];
+const grupos = [];
+for (const it of itens) {
+  const g = grupos.find(g => g.tipo === it.tipo && Math.hypot(g.x - it.x, g.z - it.z) < 12);
+  if (g) { g.itens.push(it); } else { grupos.push({ tipo: it.tipo, x: it.x, z: it.z, itens: [it] }); }
+}
+const svg = document.getElementById("marks"), NS = "http://www.w3.org/2000/svg";
+for (const r of D.rotulos) {
+  const t = document.createElementNS(NS, "text");
+  t.setAttribute("x", px(r.x)); t.setAttribute("y", py(r.z)); t.setAttribute("class", "lbl"); t.setAttribute("text-anchor", "middle");
+  t.textContent = r.t; svg.appendChild(t);
+}
+const marcas = [];
+grupos.forEach((g, gi) => {
+  const el = document.createElementNS(NS, "g");
+  el.setAttribute("class", "mk"); el.dataset.ids = g.itens.map(i => i.id).join(",");
+  const halo = document.createElementNS(NS, "circle"); halo.setAttribute("class", "halo"); halo.setAttribute("r", 14); halo.setAttribute("fill", "none");
+  const dot = document.createElementNS(NS, "circle"); dot.setAttribute("class", "dot"); dot.setAttribute("r", 9);
+  dot.style.fill = g.tipo === "tent" ? "var(--tent)" : "var(--sleep)";
+  el.append(halo, dot);
+  if (g.itens.length > 1) {
+    const n = document.createElementNS(NS, "text"); n.setAttribute("text-anchor", "middle"); n.setAttribute("dy", "4"); n.textContent = g.itens.length;
+    n.style.font = "700 12px var(--body)"; n.style.strokeWidth = "0"; n.style.fill = "#fff"; el.appendChild(n);
+  }
+  const off = g.tipo === "sleep" ? -1 : 1;
+  const lab = document.createElementNS(NS, "text"); lab.setAttribute("x", 14); lab.setAttribute("y", off * 4 + 4);
+  lab.textContent = g.itens.length > 1 ? "Acampamento · " + g.itens.length + " barracas" : (g.itens[0].ref.nome);
+  // barraca do mesmo jogador colada no ponto onde ele deslogou: o nome aparece uma vez só
+  const repetido = g.tipo === "tent" && g.itens.length === 1 && grupos.some(o => o.tipo === "sleep" && o.itens[0].ref.nome === g.itens[0].ref.nome && Math.hypot(o.x - g.x, o.z - g.z) < 15);
+  if (!repetido) el.appendChild(lab);
+  el.addEventListener("click", (e) => { e.stopPropagation(); selecionar(g.itens[0].id, false); });
+  svg.appendChild(el);
+  marcas.push({ el, gx: px(g.x), gy: py(g.z) });
+});
+
+// listas
+function linha(lista, id, sw, titulo, sub, quando, x, z) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "row"; b.id = "row-" + id;
+  b.innerHTML = '<span class="sw" style="background:' + sw + '"></span><span class="who"><b></b><small></small></span><span class="when"></span>';
+  b.querySelector("b").textContent = titulo;
+  b.querySelector("small").innerHTML = "";
+  b.querySelector("small").append(document.createTextNode(sub + " · "));
+  const a = document.createElement("a"); a.href = izu(x, z); a.target = "_blank"; a.rel = "noopener"; a.className = "coord";
+  a.textContent = Math.round(x) + " / " + Math.round(z); a.addEventListener("click", e => e.stopPropagation());
+  b.querySelector("small").appendChild(a);
+  b.querySelector(".when").textContent = quando;
+  b.addEventListener("click", () => selecionar(id, true));
+  lista.appendChild(b);
+}
+const lc = document.getElementById("lista-contas"), lt = document.getElementById("lista-tendas");
+D.contas.forEach((c, i) => linha(lc, "c" + i, "var(--sleep)", c.nome, c.cla + " · " + c.obs, "saiu " + c.saiu, c.x, c.z));
+D.tendas.forEach((t, i) => linha(lt, "t" + i, "var(--tent)", t.nome, t.cla + " · barraca " + t.objeto.toLowerCase(), t.quando, t.x, t.z));
+D.tendas.forEach((t, i) => {
+  if (Math.hypot(t.x - 2790, t.z - 1223.5) < 12) {
+    const s = document.querySelector("#row-t" + i + " .who b"); const c = document.createElement("span"); c.className = "chip"; c.textContent = "acampamento"; s.appendChild(c);
+  }
+});
+
+// mapa: arrastar, zoom pela roda, pinça e botões
+const vp = document.getElementById("vp"), stage = document.getElementById("stage");
+let k = 1, tx = 0, ty = 0;
+function caber() { const w = vp.clientWidth, h = vp.clientHeight; return Math.max(w / D.img.w, h / D.img.h); }
+function limitar() {
+  const w = vp.clientWidth, h = vp.clientHeight, sw = D.img.w * k, sh = D.img.h * k;
+  tx = Math.min(0, Math.max(w - sw, tx)); ty = Math.min(0, Math.max(h - sh, ty));
+}
+function aplicar() {
+  limitar();
+  stage.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + k + ")";
+  const s = 0.95 / k;   // o ponto fica com ~13 px na tela em qualquer zoom
+  for (const m of marcas) m.el.setAttribute("transform", "translate(" + m.gx + "," + m.gy + ") scale(" + s + ")");
+  for (const t of svg.querySelectorAll(".lbl")) { t.style.fontSize = (14 / k) + "px"; t.style.strokeWidth = (3 / k) + "px"; }
+}
+function zoom(f, cx, cy, anim) {
+  const kmin = caber(), kmax = kmin * 6, nk = Math.min(kmax, Math.max(kmin, k * f));
+  if (cx === undefined) { cx = vp.clientWidth / 2; cy = vp.clientHeight / 2; }
+  tx = cx - (cx - tx) * (nk / k); ty = cy - (cy - ty) * (nk / k); k = nk;
+  stage.classList.toggle("anim", !!anim); aplicar();
+}
+function reset(anim) { k = caber(); tx = (vp.clientWidth - D.img.w * k) / 2; ty = (vp.clientHeight - D.img.h * k) / 2; stage.classList.toggle("anim", !!anim); aplicar(); }
+function centrar(x, z) {
+  const kmin = caber(); if (k < kmin * 2.2) k = kmin * 2.2;
+  tx = vp.clientWidth / 2 - px(x) * k; ty = vp.clientHeight / 2 - py(z) * k; stage.classList.add("anim"); aplicar();
+}
+vp.addEventListener("wheel", (e) => { e.preventDefault(); const r = vp.getBoundingClientRect(); zoom(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX - r.left, e.clientY - r.top, false); }, { passive: false });
+const toques = new Map(); let arraste = null, pinca = null;
+vp.addEventListener("pointerdown", (e) => {
+  vp.setPointerCapture(e.pointerId); toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  stage.classList.remove("anim");
+  if (toques.size === 1) { arraste = { x: e.clientX, y: e.clientY, tx, ty }; vp.classList.add("drag"); }
+  if (toques.size === 2) { const [a, b] = [...toques.values()]; pinca = { d: Math.hypot(a.x - b.x, a.y - b.y), k }; arraste = null; }
+});
+vp.addEventListener("pointermove", (e) => {
+  if (!toques.has(e.pointerId)) return;
+  toques.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (toques.size === 2 && pinca) {
+    const [a, b] = [...toques.values()], r = vp.getBoundingClientRect();
+    const d = Math.hypot(a.x - b.x, a.y - b.y); zoom((pinca.k * d / pinca.d) / k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top, false);
+  } else if (arraste) { tx = arraste.tx + e.clientX - arraste.x; ty = arraste.ty + e.clientY - arraste.y; aplicar(); }
+});
+function soltar(e) { toques.delete(e.pointerId); if (toques.size < 2) pinca = null; if (!toques.size) { arraste = null; vp.classList.remove("drag"); } }
+vp.addEventListener("pointerup", soltar); vp.addEventListener("pointercancel", soltar);
+document.getElementById("zin").onclick = () => zoom(1.4, undefined, undefined, true);
+document.getElementById("zout").onclick = () => zoom(1 / 1.4, undefined, undefined, true);
+document.getElementById("zreset").onclick = () => reset(true);
+new ResizeObserver(() => reset(false)).observe(vp);
+
+function selecionar(id, mover) {
+  document.querySelectorAll(".row.sel, .mk.sel").forEach(e => e.classList.remove("sel"));
+  const row = document.getElementById("row-" + id); if (row) row.classList.add("sel");
+  const m = marcas.find(m => m.el.dataset.ids.split(",").includes(id)); if (m) m.el.classList.add("sel");
+  const it = itens.find(i => i.id === id);
+  if (mover && it) { centrar(it.x, it.z); vp.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+  else if (row) { row.scrollIntoView({ block: "nearest", behavior: "smooth" }); }
+}
+reset(false);
+</script>
+
+</body>
+</html>
